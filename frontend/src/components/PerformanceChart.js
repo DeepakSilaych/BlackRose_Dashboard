@@ -13,6 +13,7 @@ import {
   Filler,
 } from 'chart.js';
 import { updatePerformanceData, setWebSocketConnected, initializePerformanceData } from '../store/slices/dataSlice';
+import { WS_URL } from '../config';
 
 ChartJS.register(
   CategoryScale,
@@ -31,36 +32,44 @@ const PerformanceChart = () => {
   const { timestamps, values, isConnected } = useSelector((state) => state.data.performanceData);
 
   useEffect(() => {
-    // Initialize WebSocket connection
-    wsRef.current = new WebSocket('ws://localhost:8000/ws/performance');
+    const connectWebSocket = () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
 
-    wsRef.current.onopen = () => {
-      dispatch(setWebSocketConnected(true));
+      const ws = new WebSocket(`${WS_URL}/ws/performance`);
+
+      ws.onopen = () => {
+        dispatch(setWebSocketConnected(true));
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        // Check if it's an initial dataset or an update
+        if (Array.isArray(data)) {
+          // Initial dataset
+          const formattedData = data.map(item => ({
+            timestamp: new Date(item.timestamp).toLocaleTimeString(),
+            value: item.value
+          }));
+          dispatch(initializePerformanceData(formattedData));
+        } else {
+          // Single update
+          dispatch(updatePerformanceData({
+            timestamp: new Date(data.timestamp).toLocaleTimeString(),
+            value: data.value
+          }));
+        }
+      };
+
+      ws.onclose = () => {
+        dispatch(setWebSocketConnected(false));
+      };
+
+      return ws;
     };
 
-    wsRef.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      
-      // Check if it's an initial dataset or an update
-      if (Array.isArray(data)) {
-        // Initial dataset
-        const formattedData = data.map(item => ({
-          timestamp: new Date(item.timestamp).toLocaleTimeString(),
-          value: item.value
-        }));
-        dispatch(initializePerformanceData(formattedData));
-      } else {
-        // Single update
-        dispatch(updatePerformanceData({
-          timestamp: new Date(data.timestamp).toLocaleTimeString(),
-          value: data.value
-        }));
-      }
-    };
-
-    wsRef.current.onclose = () => {
-      dispatch(setWebSocketConnected(false));
-    };
+    wsRef.current = connectWebSocket();
 
     // Cleanup WebSocket connection on component unmount
     return () => {

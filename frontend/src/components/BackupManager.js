@@ -21,8 +21,7 @@ import {
   CloseRounded as CloseIcon,
 } from '@mui/icons-material';
 import axios from 'axios';
-
-const API_URL = 'http://localhost:8000';
+import { API_URL } from '../config';
 
 const parseBackupDate = (filename) => {
   // Extract date part from filename (format: backend_table_backup_YYYYMMDD_HHMMSS.csv)

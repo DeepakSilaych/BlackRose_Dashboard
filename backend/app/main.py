@@ -22,13 +22,17 @@ from fastapi.responses import FileResponse
 app = FastAPI()
 
 # Configure CORS
+origins = [
+    "http://localhost:3000",  # Development
+    "https://blackrose.deepaksilaych.me",  # Production
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_origin_regex=r"^http://localhost:\d+$",  # Allow WebSocket connections
 )
 
 # Path to the CSV file
