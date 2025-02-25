@@ -186,38 +186,47 @@ async def websocket_endpoint(websocket: WebSocket):
 async def read_users_me(current_user: str = Depends(get_current_user)):
     return {"username": current_user}
 
-@app.post("/register")
-async def register(
-    user_data: UserCreate,
-    db: AsyncSession = Depends(get_db)
-):
+@app.post("/register", response_model=dict)
+async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
     """Register a new user."""
-    # Check if username already exists
-    existing_user = await get_user(db, user_data.username)
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered"
+    try:
+        # Check if username already exists
+        query = select(User).where(User.username == user_data.username)
+        result = await db.execute(query)
+        existing_user = result.scalar_one_or_none()
+        
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already registered"
+            )
+        
+        # Create new user
+        hashed_password = get_password_hash(user_data.password)
+        new_user = User(
+            username=user_data.username,
+            hashed_password=hashed_password
         )
-    
-    # Create new user
-    hashed_password = get_password_hash(user_data.password)
-    user = User(username=user_data.username, hashed_password=hashed_password)
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
-    
-    # Create and return access token
-    access_token_expires = timedelta(minutes=30)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "username": user.username
-    }
+        db.add(new_user)
+        await db.commit()
+        await db.refresh(new_user)
+        
+        # Create access token
+        access_token = create_access_token(
+            data={"sub": new_user.username}
+        )
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer"
+        }
+        
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
 
 @app.get("/dummy-credentials")
 async def get_dummy_credentials():

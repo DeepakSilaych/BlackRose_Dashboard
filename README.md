@@ -1,94 +1,105 @@
-# BlackRose Trading Dashboard
+# BlackRose Dashboard
 
-A modern, responsive trading dashboard built with React and FastAPI, featuring real-time data visualization, user authentication, and API key management.
+- Frontend: https://blackrose.deepaksilaych.me
+- Backend: https://blackroseb.deepaksilaych.me
 
-## Quick Start
+## Features
+
+- Real-time performance data visualization
+- JWT-based authentication
+- CRUD operations for data management
+- Backup and restore functionality
+- Dark theme UI with Material Design
+- WebSocket-based live updates
+- Concurrency handling
+
+## Local Setup
 
 ### Backend Setup
 
-1. Navigate to backend directory and create virtual environment:
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
 
-2. Start the FastAPI server:
-```bash
-uvicorn app.main:app --reload --port 8000
-```
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv env
+   source env/bin/activate  # On Windows: env\Scripts\activate
+   ```
+
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Start the backend server:
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+
+The backend will be available at `http://localhost:8000`
 
 ### Frontend Setup
 
-1. Navigate to frontend directory and install dependencies:
-```bash
-cd frontend
-npm install
-```
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
 
-2. Start the development server:
-```bash
-npm start
-```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the development server:
+   ```bash
+   npm start
+   ```
+
+The frontend will be available at `http://localhost:3000`
+
+
+## API Documentation
+
+- Swagger UI: https://blackroseb.deepaksilaych.me/docs
+- ReDoc: https://blackroseb.deepaksilaych.me/redoc
 
 ## Testing Guide
 
 ### Authentication
 
-Test accounts available:
-- Demo Account:
-  - Username: demo_user
-  - Password: demo123
-- Test Account:
-  - Username: test_user
-  - Password: test123
-
-Features to test:
-1. Login with test accounts
-2. Register new account
-3. Verify error handling
+1. Access the login page at `/`
+2. Use the provided dummy credentials or create a new account
+3. Verify that:
+   - JWT token is stored in localStorage
+   - Protected routes are accessible
+   - Unauthorized access is blocked
 
 ### Data Visualization
 
-1. Real-time Chart:
-   - Verify live updates
-   - Check responsiveness
-   - Validate data accuracy
+1. After login, observe the performance chart
+2. Verify:
+   - Real-time data updates via WebSocket
+   - Proper scaling and axes
 
-2. Performance Metrics:
-   - Total PNL
-   - Total Margin
-   - Total Risk
-   - Active Users
+### CRUD Operations
 
-### API Key Management
+1. Navigate to the data table
+2. Test the following:
+   - Create: Add new entries with broker details
+   - Read: View existing entries and search functionality
+   - Update: Modify broker information
+   - Delete: Remove entries
+   - Verify concurrency handling
 
-1. Create new API key
-2. Update existing key
-3. Delete key
-4. Verify changes in table
+### Backup Management
 
-## API Documentation
+1. Access the backup manager
+2. Test:
+   - Creating backups
+   - Listing available backups
+   - Downloading backup files
+   - Restoring from backups
+   - Error handling during restore
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
-## Project Structure
-
-```
-blackrose/
-├── backend/
-│   ├── app/
-│   │   ├── main.py        # FastAPI app
-│   │   ├── auth.py        # Authentication
-│   │   ├── models.py      # Database models
-│   │   └── database.py    # DB config
-│   └── data/             # Data storage
-└── frontend/
-    └── src/
-        ├── components/   # React components
-        ├── store/       # Redux store
-        └── App.js       # Main app
-# BlackRose_Dashboard
-# BlackRose_Dashboard

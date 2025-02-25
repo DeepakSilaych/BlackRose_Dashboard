@@ -42,6 +42,27 @@ export const logout = createAsyncThunk(
   }
 );
 
+// Register a new user
+export const register = createAsyncThunk(
+  'auth/register',
+  async (credentials) => {
+    try {
+      const response = await axios.post(`${API_URL}/register`, credentials);
+      const { access_token } = response.data;
+      
+      // Store token
+      localStorage.setItem('token', access_token);
+      
+      return { access_token };
+    } catch (error) {
+      if (error.response) {
+        throw new Error(error.response.data.detail || 'Registration failed');
+      }
+      throw new Error('Network error during registration');
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
@@ -58,6 +79,7 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Login cases
       .addCase(login.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -71,6 +93,19 @@ const authSlice = createSlice({
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      // Register cases
+      .addCase(register.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(register.fulfilled, (state, action) => {
+        state.token = action.payload.access_token;
+        state.loading = false;
+      })
+      .addCase(register.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
       })
       .addCase(logout.fulfilled, (state) => {
         state.token = null;

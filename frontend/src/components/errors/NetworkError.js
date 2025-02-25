@@ -3,6 +3,7 @@ import { Box, Button, Typography, Container } from '@mui/material';
 import WifiOffIcon from '@mui/icons-material/WifiOff';
 
 const NetworkError = ({ onRetry }) => {
+  localStorage.clear();
   return (
     <Container>
       <Box

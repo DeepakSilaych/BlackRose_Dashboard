@@ -4,12 +4,12 @@ const theme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#3B82F6',
+      main: '#BEFF03',
       light: '#60A5FA',
       dark: '#2563EB',
     },
     secondary: {
-      main: '#10B981',
+      main: '#03FFE8',
       light: '#34D399',
       dark: '#059669',
     },
@@ -62,6 +62,32 @@ const theme = createTheme({
     },
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        '*': {
+          '&::-webkit-scrollbar': {
+            width: '8px',
+            height: '8px',
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'rgba(0, 0, 0, 0.3)',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'linear-gradient(180deg, #8BB100 0%, #02B3A3 100%)',
+            borderRadius: '4px',
+            '&:hover': {
+              background: 'linear-gradient(180deg, #8BB100 20%, #02B3A3 100%)',
+            },
+          },
+        },
+        body: {
+          backgroundColor: '#111827',
+          color: '#fff',
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {

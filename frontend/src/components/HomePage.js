@@ -164,8 +164,17 @@ const HomePage = () => {
               >
                 <Button
                   variant="contained"
-                  size="large"
+                  size="medium"
                   onClick={() => navigate('/dashboard')}
+                  style={{
+                    background: 'transparent',
+                    border: '5px solid #BEFF03',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    color: theme.palette.common.white,
+                  }}
                   endIcon={
                     <motion.div
                       animate={{ x: [0, 5, 0] }}
@@ -174,6 +183,7 @@ const HomePage = () => {
                       <ArrowForwardIcon />
                     </motion.div>
                   }
+
                   sx={{
                     py: { xs: 1.5, sm: 2 },
                     px: { xs: 3, sm: 4 },

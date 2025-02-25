@@ -277,6 +277,25 @@ const LoginPage = () => {
                   {loading ? 'Signing in...' : 'Sign In'}
                 </Button>
 
+                <Button
+                  fullWidth
+                  onClick={() => navigate('/register')}
+                  sx={{
+                    mt: 1,
+                    py: { xs: 1, sm: 1.5 },
+                    border: '1px solid',
+                    borderColor: 'rgba(190, 255, 3, 0.3)',
+                    color: '#BEFF03',
+                    fontWeight: 500,
+                    '&:hover': {
+                      borderColor: '#BEFF03',
+                      background: 'rgba(190, 255, 3, 0.1)',
+                    },
+                  }}
+                >
+                  Don't have an account? Sign Up
+                </Button>
+
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Button
                     onClick={() => setShowDummyCredentials(!showDummyCredentials)}
@@ -293,20 +312,6 @@ const LoginPage = () => {
                     {showDummyCredentials ? 'Hide Test Accounts' : 'Show Test Accounts'}
                   </Button>
 
-                  <Button
-                    onClick={() => navigate('/register')}
-                    sx={{
-                      color: 'rgba(190, 255, 3, 0.7)',
-                      textTransform: 'none',
-                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                      '&:hover': {
-                        color: '#BEFF03',
-                        background: 'rgba(190, 255, 3, 0.1)',
-                      },
-                    }}
-                  >
-                    Create Account
-                  </Button>
                 </Box>
 
                 {showDummyCredentials && dummyCredentials.length > 0 && (
