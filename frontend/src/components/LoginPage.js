@@ -19,6 +19,7 @@ import {
   ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 import { login } from '../store/slices/authSlice';
+import { API_URL } from '../config';
 
 const handleDummyCredentials = (credentials, setFormData) => {
   setFormData({
@@ -42,7 +43,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     // Fetch dummy credentials
-    fetch('http://localhost:8000/dummy-credentials')
+    fetch(`${API_URL}/dummy-credentials`)
       .then(res => res.json())
       .then(data => setDummyCredentials(data.credentials))
       .catch(err => console.error('Error fetching dummy credentials:', err));

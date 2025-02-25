@@ -29,14 +29,14 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # Allow all origins temporarily for testing
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Path to the CSV file
-CSV_PATH = Path("/home/deepak-silaych/Desktop/blackrose/backend/data/backend_table.csv")
+CSV_PATH = Path("data/backend_table.csv")  # Relative to the working directory
 
 class UserCreate(BaseModel):
     username: str
