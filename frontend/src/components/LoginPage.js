@@ -279,7 +279,7 @@ const LoginPage = () => {
 
                 <Button
                   fullWidth
-                  onClick={() => navigate('/register')}
+                  onClick={() => navigate('/signup')}
                   sx={{
                     mt: 1,
                     py: { xs: 1, sm: 1.5 },

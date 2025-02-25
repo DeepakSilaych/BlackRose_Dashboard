@@ -10,7 +10,7 @@ from .database import get_db
 from .models import User
 
 # Constants
-SECRET_KEY = "your-secret-key-keep-it-secret"  # Change this in production!
+SECRET_KEY = "my-secret-key-keep-it-secret" 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -51,8 +51,20 @@ async def get_user(db: AsyncSession, username: str) -> Optional[User]:
 async def authenticate_user(db: AsyncSession, username: str, password: str) -> Optional[User]:
     """Authenticate user with username and password."""
     user = await get_user(db, username)
+    
+    # For demo purposes, create user if not exists
     if not user:
-        return None
+        hashed_password = get_password_hash(password)
+        user = User(username=username, hashed_password=hashed_password)
+        db.add(user)
+        try:
+            await db.commit()
+            await db.refresh(user)
+        except Exception:
+            await db.rollback()
+            return None
+        return user
+
     if not verify_password(password, user.hashed_password):
         return None
     return user

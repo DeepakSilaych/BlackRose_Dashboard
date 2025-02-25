@@ -236,12 +236,12 @@ async def get_dummy_credentials():
             {
                 "username": "demo_user",
                 "password": "demo123",
-                "note": "Demo Account"
+                "label": "Demo Account"
             },
             {
                 "username": "test_user",
                 "password": "test123",
-                "note": "Test Account"
+                "label": "Test Account"
             }
         ]
     }
