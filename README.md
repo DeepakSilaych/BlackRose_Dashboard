@@ -3,6 +3,12 @@
 - Frontend: https://blackrose.deepaksilaych.me
 - Backend: https://blackroseb.deepaksilaych.me
 
+## API Documentation
+
+- Swagger UI: https://blackroseb.deepaksilaych.me/docs
+- ReDoc: https://blackroseb.deepaksilaych.me/redoc
+
+
 ## Features
 
 - Real-time performance data visualization
@@ -60,10 +66,6 @@ The backend will be available at `http://localhost:8000`
 The frontend will be available at `http://localhost:3000`
 
 
-## API Documentation
-
-- Swagger UI: https://blackroseb.deepaksilaych.me/docs
-- ReDoc: https://blackroseb.deepaksilaych.me/redoc
 
 ## Testing Guide
 
