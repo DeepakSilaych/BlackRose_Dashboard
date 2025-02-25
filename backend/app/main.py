@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, Depends, HTTPException, status, BackgroundTasks
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException, status, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,11 +9,15 @@ from pathlib import Path
 from pydantic import BaseModel
 import json
 import asyncio
+import random
 from .database import get_db, engine
 from .auth import authenticate_user, create_access_token, get_current_user, get_password_hash, get_user
-from .models import Base, User, Session, RandomNumber, BackendTableEntry
+from .models import Base, User, Session, RandomNumber, BackendTableEntry, PerformanceData
 from .background_tasks import generate_random_numbers
-from .csv_handler import read_csv, write_csv, update_csv_row, delete_csv_row
+from .csv_handler import read_csv, write_csv, update_csv_row, delete_csv_row, csv_lock, backup_csv, ensure_data_dir
+from .services import PerformanceService
+import shutil
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 
@@ -24,6 +28,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_origin_regex=r"^http://localhost:\d+$",  # Allow WebSocket connections
 )
 
 # Path to the CSV file
@@ -33,15 +38,28 @@ class UserCreate(BaseModel):
     username: str
     password: str
 
+# Initialize performance service
+performance_service = PerformanceService()
+
 @app.on_event("startup")
-async def startup():
+async def startup_event():
     # Create database tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
     # Start random number generator
-    db = AsyncSession(engine)
-    asyncio.create_task(generate_random_numbers(db))
+    async for db in get_db():
+        asyncio.create_task(generate_random_numbers(db))
+        break
+    
+    # Start performance service with a new database session
+    async for db in get_db():
+        await performance_service.start(db)
+        break
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await performance_service.stop()
 
 @app.post("/token")
 async def login(
@@ -214,3 +232,119 @@ async def get_dummy_credentials():
             }
         ]
     }
+
+@app.websocket("/ws/performance")
+async def websocket_performance(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
+    await websocket.accept()
+    
+    try:
+        # Send initial dataset (last 50 points)
+        historical_data = await performance_service.get_recent_data(db)
+        initial_data = [
+            {
+                "timestamp": data.timestamp.isoformat(),
+                "value": data.value
+            }
+            for data in historical_data
+        ]
+        await websocket.send_json(initial_data)  # Send as array for initial dataset
+        
+        # Subscribe to real-time updates
+        performance_service.subscribe(websocket)
+        
+        # Keep connection alive
+        while True:
+            try:
+                await websocket.receive_text()  # Keep connection alive
+            except WebSocketDisconnect:
+                break
+            
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+    finally:
+        performance_service.unsubscribe(websocket)
+
+# Backup management endpoints
+@app.get("/api/backups", response_model=List[str])
+async def list_backups(current_user: str = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """List all available CSV backups."""
+    try:
+        data_dir = ensure_data_dir()
+        csv_path = data_dir / "backend_table.csv"
+        backup_pattern = f"{csv_path.stem}_backup_*{csv_path.suffix}"
+        backups = sorted(csv_path.parent.glob(backup_pattern), reverse=True)
+        return [backup.name for backup in backups]
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error listing backups: {str(e)}"
+        )
+
+@app.post("/api/backups/{backup_name}/restore")
+async def restore_backup(
+    backup_name: str,
+    current_user: str = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Restore from a specific backup."""
+    try:
+        data_dir = ensure_data_dir()
+        csv_path = data_dir / "backend_table.csv"
+        backup_path = csv_path.parent / backup_name
+        
+        if not backup_path.exists():
+            raise HTTPException(status_code=404, detail="Backup not found")
+        
+        # Create a backup of current state before restore
+        version = await csv_lock.acquire()
+        try:
+            current_backup = backup_csv(csv_path)
+            shutil.copy2(backup_path, csv_path)
+            return {
+                "message": "Backup restored successfully",
+                "current_backup": current_backup.name,
+                "version": version
+            }
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error during restore: {str(e)}"
+            )
+        finally:
+            csv_lock.release()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error restoring backup: {str(e)}"
+        )
+
+@app.get("/api/backups/{backup_name}/download")
+async def download_backup(
+    backup_name: str,
+    current_user: str = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Download a specific backup."""
+    try:
+        data_dir = ensure_data_dir()
+        csv_path = data_dir / "backend_table.csv"
+        backup_path = csv_path.parent / backup_name
+        
+        if not backup_path.exists():
+            raise HTTPException(status_code=404, detail="Backup not found")
+        
+        return FileResponse(
+            backup_path,
+            media_type="text/csv",
+            filename=backup_path.name,
+            headers={"Cache-Control": "no-cache"}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error downloading backup: {str(e)}"
+        )

@@ -6,11 +6,9 @@ const API_URL = 'http://localhost:8000';
 // Helper function to handle network errors
 const handleNetworkError = (error) => {
   if (!error.response) {
-    // Network error
     return 'Unable to connect to the server. Please check your connection.';
   }
   if (error.response.status === 500) {
-    // Server error
     window.location.href = '/500';
     return 'An unexpected server error occurred.';
   }
@@ -69,18 +67,35 @@ const dataSlice = createSlice({
   name: 'data',
   initialState: {
     csvData: [],
-    randomNumbers: Array.from({ length: 50 }, () => Math.floor(Math.random() * 100)), // Initial 50 random values
+    performanceData: {
+      timestamps: [],
+      values: [],
+      isConnected: false
+    },
     loading: false,
     error: null,
     currentVersion: 1,
     networkError: false,
   },
   reducers: {
-    addRandomNumber: (state, action) => {
-      state.randomNumbers.push(action.payload);
-      if (state.randomNumbers.length > 50) {
-        state.randomNumbers.shift(); // Keep only last 50 numbers
+    initializePerformanceData: (state, action) => {
+      const data = action.payload;
+      state.performanceData.timestamps = data.map(d => d.timestamp);
+      state.performanceData.values = data.map(d => d.value);
+    },
+    updatePerformanceData: (state, action) => {
+      const { timestamp, value } = action.payload;
+      state.performanceData.timestamps.push(timestamp);
+      state.performanceData.values.push(value);
+      
+      // Keep only last 50 data points
+      if (state.performanceData.timestamps.length > 50) {
+        state.performanceData.timestamps.shift();
+        state.performanceData.values.shift();
       }
+    },
+    setWebSocketConnected: (state, action) => {
+      state.performanceData.isConnected = action.payload;
     },
     clearError: (state) => {
       state.error = null;
@@ -160,5 +175,5 @@ const dataSlice = createSlice({
   },
 });
 
-export const { addRandomNumber, clearError, setNetworkError } = dataSlice.actions;
+export const { initializePerformanceData, updatePerformanceData, setWebSocketConnected, clearError, setNetworkError } = dataSlice.actions;
 export default dataSlice.reducer;

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Float
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Float, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
@@ -28,6 +28,13 @@ class RandomNumber(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     timestamp = Column(DateTime, unique=True, index=True)
+    value = Column(Float)
+
+class PerformanceData(Base):
+    __tablename__ = "performance_data"
+
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
     value = Column(Float)
 
 class BackendTableEntry(Base):

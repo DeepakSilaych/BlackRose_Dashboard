@@ -11,7 +11,8 @@ import {
   CardContent,
   Avatar,
   useTheme,
-  alpha
+  alpha,
+  Divider
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -23,9 +24,11 @@ import {
 } from '@mui/icons-material';
 import { logout } from '../store/slices/authSlice';
 import { fetchCsvData } from '../store/slices/dataSlice';
-import RandomNumberChart from './RandomNumberChart';
+import PerformanceChart from './PerformanceChart';
 import DataTable from './DataTable';
 import NetworkError from './errors/NetworkError';
+import BackupManager from './BackupManager';
+import ErrorSnackbar from './ErrorSnackbar';
 
 const StatCard = ({ title, value, icon: Icon, color, trend }) => {
   const theme = useTheme();
@@ -55,35 +58,25 @@ const StatCard = ({ title, value, icon: Icon, color, trend }) => {
               {title}
             </Typography>
             <Typography 
-              variant="h4" 
-              component="div" 
+              variant="h5" 
               sx={{ 
-                fontWeight: 700,
-                color: theme.palette.common.white,
-                fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' },
-                letterSpacing: '-0.02em',
-                mb: 1
+                fontWeight: 600,
+                fontSize: { xs: '1.25rem', sm: '1.5rem' }
               }}
             >
               {value}
             </Typography>
           </Box>
-          <Box
+          <Avatar
             sx={{
-              backgroundColor: alpha(color, 0.2),
-              borderRadius: '12px',
+              bgcolor: alpha(color, 0.2),
+              color: color,
               width: { xs: 40, sm: 48 },
-              height: { xs: 40, sm: 48 },
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              height: { xs: 40, sm: 48 }
             }}
           >
-            <Icon sx={{ 
-              fontSize: { xs: 20, sm: 24 }, 
-              color: color 
-            }} />
-          </Box>
+            <Icon />
+          </Avatar>
         </Box>
       </CardContent>
     </Card>
@@ -94,9 +87,9 @@ const Dashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const theme = useTheme();
-  
   const dataState = useSelector((state) => state.data) || {};
   const { networkError = false, csvData = [] } = dataState;
+  const username = useSelector((state) => state.auth.username);
 
   useEffect(() => {
     dispatch(fetchCsvData());
@@ -107,12 +100,8 @@ const Dashboard = () => {
     navigate('/');
   };
 
-  const handleRetry = () => {
-    dispatch(fetchCsvData());
-  };
-
   if (networkError) {
-    return <NetworkError onRetry={handleRetry} />;
+    return <NetworkError />;
   }
 
   // Calculate statistics
@@ -122,159 +111,117 @@ const Dashboard = () => {
   const activeUsers = new Set(csvData.map(row => row.user)).size;
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh',
-      backgroundColor: theme.palette.background.default,
-      pb: 4 
-    }}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       {/* Header */}
-      <Paper 
-        elevation={0}
-        sx={{ 
-          px: { xs: 2, sm: 3 },
-          py: { xs: 1.5, sm: 2 },
-          mb: { xs: 2, sm: 3 },
-          borderRadius: 0,
-          background: alpha(theme.palette.background.paper, 0.8),
-          backdropFilter: 'blur(8px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 4,
         }}
       >
-        <Container maxWidth="xl">
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center'
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
-              <Avatar 
-                sx={{ 
-                  bgcolor: theme.palette.primary.main,
-                  width: { xs: 32, sm: 40 },
-                  height: { xs: 32, sm: 40 }
-                }}
-              >
-                <PersonIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
-              </Avatar>
-              <Typography 
-                variant="h4" 
-                component="h1" 
-                sx={{ 
-                  fontWeight: 700,
-                  fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' }
-                }}
-              >
-                Dashboard
+        <Box>
+          <Typography variant="h4" gutterBottom>
+            Dashboard
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Welcome back, {username || 'User'}
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <BackupManager />
+          <Button
+            variant="outlined"
+            onClick={handleLogout}
+            startIcon={<LogoutIcon />}
+            sx={{
+              borderColor: alpha(theme.palette.error.main, 0.5),
+              color: theme.palette.error.main,
+              '&:hover': {
+                borderColor: theme.palette.error.main,
+                bgcolor: alpha(theme.palette.error.main, 0.1),
+              },
+            }}
+          >
+            Logout
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Stats Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Total PNL"
+            value={`$${totalPnl.toLocaleString()}`}
+            icon={WalletIcon}
+            color={theme.palette.primary.main}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Total Margin"
+            value={`$${totalMargin.toLocaleString()}`}
+            icon={ChartIcon}
+            color={theme.palette.info.main}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Total Risk"
+            value={`$${totalRisk.toLocaleString()}`}
+            icon={StatsIcon}
+            color={theme.palette.error.main}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Active Users"
+            value={activeUsers}
+            icon={PersonIcon}
+            color={theme.palette.success.main}
+          />
+        </Grid>
+      </Grid>
+
+      {/* Main Content */}
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Paper 
+            sx={{ 
+              p: 3,
+              background: alpha(theme.palette.background.paper, 0.8),
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <Typography variant="h6" gutterBottom>
+              Performance Chart
+            </Typography>
+            <PerformanceChart />
+          </Paper>
+        </Grid>
+        <Grid item xs={12}>
+          <Paper 
+            sx={{ 
+              p: 3,
+              background: alpha(theme.palette.background.paper, 0.8),
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6">
+                Data Table
               </Typography>
             </Box>
-            <Button
-              variant="outlined"
-              color="inherit"
-              onClick={handleLogout}
-              startIcon={<LogoutIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />}
-              sx={{
-                borderColor: alpha(theme.palette.common.white, 0.2),
-                px: { xs: 1.5, sm: 2 },
-                py: { xs: 0.5, sm: 1 },
-                fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                '&:hover': {
-                  borderColor: alpha(theme.palette.common.white, 0.3),
-                  background: alpha(theme.palette.common.white, 0.05)
-                }
-              }}
-            >
-              Logout
-            </Button>
-          </Box>
-        </Container>
-      </Paper>
-
-      <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3 } }}>
-        <Grid container spacing={{ xs: 2, sm: 3 }}>
-          {/* Stats Cards */}
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Total PNL"
-              value={`$${totalPnl.toLocaleString()}`}
-              icon={WalletIcon}
-              color={theme.palette.primary.main}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Total Margin"
-              value={`$${totalMargin.toLocaleString()}`}
-              icon={ChartIcon}
-              color={theme.palette.info.main}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Total Risk"
-              value={`$${totalRisk.toLocaleString()}`}
-              icon={StatsIcon}
-              color={theme.palette.error.main}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Active Users"
-              value={activeUsers}
-              icon={PersonIcon}
-              color={theme.palette.success.main}
-            />
-          </Grid>
-
-          {/* Chart */}
-          <Grid item xs={12}>
-            <Card sx={{ 
-              background: alpha(theme.palette.background.paper, 0.8),
-              backdropFilter: 'blur(8px)',
-              border: `1px solid ${alpha(theme.palette.common.white, 0.1)}`
-            }}>
-              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                <Typography 
-                  variant="h5" 
-                  sx={{ 
-                    mb: { xs: 2, sm: 3 },
-                    fontSize: { xs: '1.1rem', sm: '1.25rem' },
-                    fontWeight: 600
-                  }}
-                >
-                  Real-time Performance
-                </Typography>
-                <Box sx={{ height: { xs: 300, sm: 400 } }}>
-                  <RandomNumberChart />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Table */}
-          <Grid item xs={12}>
-            <Card sx={{ 
-              background: alpha(theme.palette.background.paper, 0.8),
-              backdropFilter: 'blur(8px)',
-              border: `1px solid ${alpha(theme.palette.common.white, 0.1)}`
-            }}>
-              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                <Typography 
-                  variant="h5" 
-                  sx={{ 
-                    mb: { xs: 2, sm: 3 },
-                    fontSize: { xs: '1.1rem', sm: '1.25rem' },
-                    fontWeight: 600
-                  }}
-                >
-                  API Keys Management
-                </Typography>
-                <DataTable />
-              </CardContent>
-            </Card>
-          </Grid>
+            <DataTable />
+          </Paper>
         </Grid>
-      </Container>
-    </Box>
+      </Grid>
+
+      {/* Error Handling */}
+      <ErrorSnackbar />
+    </Container>
   );
 };
 

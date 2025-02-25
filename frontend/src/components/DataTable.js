@@ -54,6 +54,7 @@ const DataTable = () => {
   const [createDialog, setCreateDialog] = useState(false);
   const [formData, setFormData] = useState({});
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, apiKey: null });
 
   useEffect(() => {
     dispatch(fetchCsvData());
@@ -84,16 +85,19 @@ const DataTable = () => {
   };
 
   const handleDelete = async (apiKey) => {
-    if (window.confirm('Are you sure you want to delete this entry?')) {
-      const resultAction = await dispatch(deleteCsvEntry(apiKey));
-      if (!resultAction.error) {
-        setSnackbar({
-          open: true,
-          message: 'Entry deleted successfully',
-          severity: 'success',
-        });
-      }
+    setDeleteDialog({ open: true, apiKey });
+  };
+
+  const handleConfirmDelete = async () => {
+    const resultAction = await dispatch(deleteCsvEntry(deleteDialog.apiKey));
+    if (!resultAction.error) {
+      setSnackbar({
+        open: true,
+        message: 'Entry deleted successfully',
+        severity: 'success',
+      });
     }
+    setDeleteDialog({ open: false, apiKey: null });
   };
 
   const handleSubmitEdit = async () => {
@@ -161,6 +165,65 @@ const DataTable = () => {
   return (
     <Fade in={true}>
       <Box>
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={deleteDialog.open}
+          onClose={() => setDeleteDialog({ open: false, apiKey: null })}
+          PaperProps={{
+            sx: {
+              background: 'rgba(17, 24, 1, 0.95)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(190, 255, 3, 0.1)',
+              borderRadius: 2,
+              boxShadow: '0 4px 30px rgba(190, 255, 3, 0.1)',
+            },
+          }}
+        >
+          <DialogTitle sx={{ 
+            color: theme.palette.error.main,
+            fontSize: { xs: '1.1rem', sm: '1.25rem' },
+            fontWeight: 600,
+            pb: 1
+          }}>
+            Confirm Delete
+          </DialogTitle>
+          <DialogContent>
+            <Typography sx={{ 
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: { xs: '0.9rem', sm: '1rem' }
+            }}>
+              Are you sure you want to delete this API key? This action cannot be undone.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 2, pt: 1 }}>
+            <Button
+              onClick={() => setDeleteDialog({ open: false, apiKey: null })}
+              sx={{
+                color: 'rgba(255, 255, 255, 0.7)',
+                '&:hover': {
+                  background: 'rgba(255, 255, 255, 0.05)',
+                },
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmDelete}
+              variant="contained"
+              color="error"
+              sx={{
+                px: 3,
+                background: theme.palette.error.main,
+                '&:hover': {
+                  background: theme.palette.error.dark,
+                },
+              }}
+            >
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
           <Button
             variant="contained"
